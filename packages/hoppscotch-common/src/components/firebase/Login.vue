@@ -8,29 +8,29 @@
   >
     <template #body>
       <div v-if="mode === 'sign-in'" class="flex flex-col space-y-2">
-        <SmartItem
+        <!-- <SmartItem
           :loading="signingInWithGitHub"
           :icon="IconGithub"
           :label="`${t('auth.continue_with_github')}`"
           @click="signInWithGithub"
-        />
-        <SmartItem
+        /> -->
+        <!-- <SmartItem
           :loading="signingInWithGoogle"
           :icon="IconGoogle"
           :label="`${t('auth.continue_with_google')}`"
           @click="signInWithGoogle"
-        />
+        /> -->
         <SmartItem
           :loading="signingInWithMicrosoft"
           :icon="IconMicrosoft"
           :label="`${t('auth.continue_with_microsoft')}`"
           @click="signInWithMicrosoft"
         />
-        <SmartItem
+        <!-- <SmartItem
           :icon="IconEmail"
           :label="`${t('auth.continue_with_email')}`"
           @click="mode = 'email'"
-        />
+        /> -->
       </div>
       <form
         v-if="mode === 'email'"

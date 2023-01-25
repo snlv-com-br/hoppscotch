@@ -203,7 +203,11 @@ export async function signInUserWithGithub() {
  * Sign user in with a popup using Microsoft
  */
 export async function signInUserWithMicrosoft() {
-  return await signInWithPopup(getAuth(), new OAuthProvider("microsoft.com"))
+  const provider = new OAuthProvider("microsoft.com")
+  provider.setCustomParameters({
+    tenant: import.meta.env.VITE_TENANT_ID,
+  })
+  return await signInWithPopup(getAuth(), provider)
 }
 
 /**
