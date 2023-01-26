@@ -171,3 +171,8 @@ tests/*/videos
 
 # PNPM
 .pnpm-store
+
+# Temporary files/folders
+.tmp
+temp
+tmp

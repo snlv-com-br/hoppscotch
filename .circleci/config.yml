@@ -1,0 +1,84 @@
+version: 2.1
+
+jobs:
+  build:
+    description: Build the app
+    docker:
+      - image: node:lts-alpine
+    steps:
+      - checkout
+      - run: echo "Installing dependencies"
+      - run: npm install -g pnpm
+      - run: pnpm install
+      - run: pnpm run generate
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - packages/hoppscotch-web/dist
+            - terraform
+
+  update_infraestructure:
+    description: Create/Update AWS infrastructure
+    docker:
+      - image: hashicorp/terraform:light
+    steps:
+      - attach_workspace:
+          at: ~/project
+      - add_ssh_keys:
+          fingerprints:
+            - "1f:fd:d3:bc:75:c2:63:12:2a:c9:96:46:4b:a2:53:bc"
+      - run:
+          name: Install AWS CLI
+          command: |
+            apk add --update --no-cache python3 py3-pip
+            pip3 install --upgrade pip
+            pip3 install awscli
+      - run:
+          name: Query AWS User Name
+          command: |
+            export AWS_USER_NAME=$(aws sts get-caller-identity --query 'Arn' --output text | cut -d/ -f2)
+      - run:
+          name: Configure Git SSH connection
+          command: |
+            SSH_KEY_FILE=$(ls ~/.ssh | grep id_rsa | head -1)
+            ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+            echo "export SSH_KEY_FILE=$SSH_KEY_FILE" >> $BASH_ENV
+            echo "export GIT_SSH_COMMAND='ssh -i ~/.ssh/$SSH_KEY_FILE'" >> $BASH_ENV
+      - run:
+          name: Terraform init and apply
+          command: |
+            cd ~/project/terraform
+            terraform init -backend-config="bucket=$TF_STATE_BUCKET" \
+            -backend-config="key=painel_legislativo_website/terraform.tfstate" \
+            -backend-config="region=$TF_STATE_BUCKET_REGION"
+            terraform apply -auto-approve -var AWS_USER_NAME="$AWS_USER_NAME"
+  update_S3:
+    docker:
+      - image: amazon/aws-cli:latest
+    steps:
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Send build output to S3
+          command: |
+            cd ~/project/packages/hoppscotch-web/dist
+            aws s3 sync . s3://$TF_VAR_DOMAIN_URL/ --acl public-read
+workflows:
+  update-s3:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - main
+      - update_infraestructure:
+          context: terraform
+          requires:
+            - build
+      - update_S3:
+          requires:
+            - update_infraestructure
