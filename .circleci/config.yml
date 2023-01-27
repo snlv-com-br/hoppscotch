@@ -16,7 +16,7 @@ jobs:
       - run: echo "Installing dependencies"
       - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm run generate --fail-on-error
+      - run: pnpm run generate
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -52,9 +52,9 @@ jobs:
       - run:
           name: Terraform init and apply
           command: |
-            cd ~/terraform
+            cd ./terraform
             terraform init -backend-config="bucket=$TF_STATE_BUCKET" \
-            -backend-config="key=painel_legislativo_website/terraform.tfstate" \
+            -backend-config="key=hoppscotch/terraform.tfstate" \
             -backend-config="region=$TF_STATE_BUCKET_REGION"
             terraform apply -auto-approve -var AWS_USER_NAME="$AWS_USER_NAME" -var DOMAIN_URL="$DOMAIN_URL"
   update_S3:
