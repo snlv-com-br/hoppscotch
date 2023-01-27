@@ -21,15 +21,13 @@ jobs:
           root: ~/project
           paths:
             - packages/hoppscotch-web/dist
-            - terraform
 
   update_infraestructure:
     description: Create/Update AWS infrastructure
     docker:
       - image: hashicorp/terraform:light
     steps:
-      - attach_workspace:
-          at: ~/project
+      - checkout
       - add_ssh_keys:
           fingerprints:
             - "1f:fd:d3:bc:75:c2:63:12:2a:c9:96:46:4b:a2:53:bc"
@@ -54,7 +52,7 @@ jobs:
       - run:
           name: Terraform init and apply
           command: |
-            cd ~/project/terraform
+            cd ~/terraform
             terraform init -backend-config="bucket=$TF_STATE_BUCKET" \
             -backend-config="key=painel_legislativo_website/terraform.tfstate" \
             -backend-config="region=$TF_STATE_BUCKET_REGION"
