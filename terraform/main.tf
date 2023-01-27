@@ -35,8 +35,13 @@ module "s3-static-website" {
 
   comment_for_cloudfront_website = "CloudFront distribution para o portal hoppscotch. Gestor de colecoes de APIs"
 
+  # abla.one
   create_route53_hosted_zone = false
-  route53_hosted_zone_id     = "Z09148111EOX0T0NFNVW2" # abla.one
+  route53_hosted_zone_id     = "Z09148111EOX0T0NFNVW2" 
+
+  # *.abla.one
+  create_acm_certificate = false
+  acm_certificate_arn_to_use = "arn:aws:acm:us-east-1:865320629804:certificate/e8506a30-52ea-4591-b66a-a0e667e0f6bc"
 
   tags = {
     "projeto" = "hoppscotch"

@@ -5,12 +5,18 @@ jobs:
     description: Build the app
     docker:
       - image: node:lts-alpine
+    environment:
+      VITE_BASE_URL: https://$DOMAIN_URL
+      # VITE_BACKEND_GQL_URL: https://$API_DOMAIN_URL/api/graphql
+      VITE_BACKEND_GQL_URL: http://15.229.9.230/graphql
+      # VITE_BACKEND_WS_URL: wss://$API_DOMAIN_URL/api/graphql/ws
+      VITE_BACKEND_WS_URL: ws://15.229.9.230/graphql/ws
     steps:
       - checkout
       - run: echo "Installing dependencies"
       - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm run generate
+      - run: pnpm run generate --fail-on-error
       - persist_to_workspace:
           root: ~/project
           paths:
@@ -39,6 +45,7 @@ jobs:
             export AWS_USER_NAME=$(aws sts get-caller-identity --query 'Arn' --output text | cut -d/ -f2)
       - run:
           name: Configure Git SSH connection
+          # Necessário para que o Terraform possa baixar módulos do Github
           command: |
             SSH_KEY_FILE=$(ls ~/.ssh | grep id_rsa | head -1)
             ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
@@ -51,7 +58,7 @@ jobs:
             terraform init -backend-config="bucket=$TF_STATE_BUCKET" \
             -backend-config="key=painel_legislativo_website/terraform.tfstate" \
             -backend-config="region=$TF_STATE_BUCKET_REGION"
-            terraform apply -auto-approve -var AWS_USER_NAME="$AWS_USER_NAME"
+            terraform apply -auto-approve -var AWS_USER_NAME="$AWS_USER_NAME" -var DOMAIN_URL="$DOMAIN_URL"
   update_S3:
     docker:
       - image: amazon/aws-cli:latest
@@ -66,7 +73,7 @@ jobs:
           name: Send build output to S3
           command: |
             cd ~/project/packages/hoppscotch-web/dist
-            aws s3 sync . s3://$TF_VAR_DOMAIN_URL/ --acl public-read
+            aws s3 sync . s3://$DOMAIN_URL/ --acl public-read
 workflows:
   update-s3:
     jobs:
@@ -77,8 +84,11 @@ workflows:
                 - main
       - update_infraestructure:
           context: terraform
-          requires:
-            - build
+          filters:
+            branches:
+              only:
+                - main
       - update_S3:
           requires:
+            - build
             - update_infraestructure
