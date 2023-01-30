@@ -13,11 +13,14 @@ jobs:
             echo 'export VITE_BASE_URL=https://"$DOMAIN_URL"' >> $BASH_ENV
             echo 'export VITE_BACKEND_GQL_URL=https://"$API_DOMAIN_URL"/api/graphql' >> $BASH_ENV
             echo 'export VITE_BACKEND_WS_URL=wss://"$API_DOMAIN_URL"/api/graphql/ws' >> $BASH_ENV
-            source $BASH_ENV
       - run: echo "Installing dependencies"
       - run: npm install -g pnpm
       - run: pnpm install
-      - run: pnpm run generate
+      - run:
+          name: Build the app
+          command: |
+            source $BASH_ENV
+            pnpm run generate
       - persist_to_workspace:
           root: ~/project
           paths:
