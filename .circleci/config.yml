@@ -5,12 +5,15 @@ jobs:
     description: Build the app
     docker:
       - image: node:lts-alpine
-    environment:
-      VITE_BASE_URL: 'https://"$DOMAIN_URL"'
-      VITE_BACKEND_GQL_URL: 'https://"$API_DOMAIN_URL"/api/graphql'
-      VITE_BACKEND_WS_URL: 'wss://"$API_DOMAIN_URL"/api/graphql/ws'
     steps:
       - checkout
+      - run:
+          name: Set environment variables
+          command: |
+            echo 'export VITE_BASE_URL=https://"$DOMAIN_URL"' >> $BASH_ENV
+            echo 'export VITE_BACKEND_GQL_URL=https://"$API_DOMAIN_URL"/api/graphql' >> $BASH_ENV
+            echo 'export VITE_BACKEND_WS_URL=wss://"$API_DOMAIN_URL"/api/graphql/ws' >> $BASH_ENV
+            source $BASH_ENV
       - run: echo "Installing dependencies"
       - run: npm install -g pnpm
       - run: pnpm install
