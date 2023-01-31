@@ -24,11 +24,30 @@
             >
               <Pane class="flex flex-1 !overflow-auto">
                 <main class="flex flex-1 w-full" role="main">
-                  <RouterView v-slot="{ Component }" class="flex flex-1">
-                    <Transition name="fade" mode="out-in" appear>
-                      <component :is="Component" />
-                    </Transition>
-                  </RouterView>
+                  <div
+                    v-if="loadingCurrentUser"
+                    class="flex flex-col items-center justify-center flex-1 p-4"
+                  >
+                    <SmartSpinner />
+                  </div>
+                  <div
+                    v-else-if="currentUser === null"
+                    class="flex flex-col items-center justify-center flex-1 p-4"
+                  >
+                    <h1 class="heading">{{ t("team.login_to_continue") }}</h1>
+                    <ButtonPrimary
+                      :label="t('auth.login_to_hoppscotch')"
+                      class="mt-8"
+                      @click="invokeAction('modals.login.toggle')"
+                    />
+                  </div>
+                  <div v-else>
+                    <RouterView v-slot="{ Component }" class="flex flex-1">
+                      <Transition name="fade" mode="out-in" appear>
+                        <component :is="Component" />
+                      </Transition>
+                    </RouterView>
+                  </div>
                 </main>
               </Pane>
             </Splitpanes>
@@ -59,6 +78,8 @@
 
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, ref, watch } from "vue"
+import { currentUser$, probableUser$ } from "~/helpers/fb/auth"
+import { useReadonlyStream } from "@composables/stream"
 import { breakpointsTailwind, useBreakpoints } from "@vueuse/core"
 import { Splitpanes, Pane } from "splitpanes"
 import "splitpanes/dist/splitpanes.css"
@@ -70,6 +91,7 @@ import { applySetting } from "~/newstore/settings"
 import { getLocalConfig, setLocalConfig } from "~/newstore/localpersistence"
 import { useToast } from "~/composables/toast"
 import { useI18n } from "~/composables/i18n"
+import { invokeAction } from "~/helpers/actions"
 
 const router = useRouter()
 
@@ -87,6 +109,15 @@ const mdAndLarger = breakpoints.greater("md")
 
 const toast = useToast()
 const t = useI18n()
+
+const currentUser = useReadonlyStream(currentUser$, null)
+const probableUser = useReadonlyStream(probableUser$, null)
+
+const loadingCurrentUser = computed(() => {
+  if (!probableUser.value) return false
+  else if (!currentUser.value) return true
+  else return false
+})
 
 onBeforeMount(() => {
   if (!mdAndLarger.value) {
